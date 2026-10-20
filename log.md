@@ -1,0 +1,102 @@
+Shared context for every agent working in this directory. Read this file **before** starting work and update it **as** you work.
+
+## Status Legend
+
+|Marker|Meaning|
+|-|-|
+|`[ ]` TODO|Planned, not started|
+|`[~]` WORKING|In progress (set *before* starting the task)|
+|`[x]` DONE|Completed and verified|
+|`[!]` FAILED|Attempted but failed or interrupted; add a note on why|
+
+## Rules for Agents
+
+1. **Read first.** Check "Current Status" and the latest log entries to learn context and what is in flight.
+2. **Plan as TODOs.** Add your tasks under "Task List" as `[ ]` before touching any files.
+3. **Mark `[~]` before starting** a task, and `[x]` immediately after finishing it. Never batch updates at the end.
+4. **Log every change** (file created/edited/deleted/moved) in the "Change Log" with timestamp, agent/model name, and files touched.
+5. **On failure, don't delete.** Mark the task `[!]` and record the error, last successful step, and any partial changes so the next agent can diagnose and resume.
+6. **Recovering from an interrupted run:** any task still `[~]` when you start means the previous agent stopped midway. Inspect the files listed in its log entry (`git status` / `git diff`), then either finish it or mark it `[!]` with notes.
+7. Keep entries append-only, newest first in the Change Log. Don't rewrite history.
+
+## Current Status
+
+* **Last updated:** 2026-10-20 — log initialised; no work started.
+* **Project:** <!-- TODO: name and one-line goal -->
+* **Stack:** <!-- TODO: Java version, build tool, framework -->
+* **Commands:** <!-- TODO: build/test/run commands -->
+* **Blockers / Notes:** none
+
+## Task List
+
+* [x] T01: Initialise `CLAUDE.md` and `log.md` for a new Java project
+* [ ] T02: Define the project (name, goal, stack) in `CLAUDE.md` and "Current Status" above
+* [ ] T03: Create the repo skeleton (build file + wrapper, `.gitignore`, `.gitattributes`, README)
+
+* [x] T04: Agree design with owner and record it in `PROJECT.md`
+* [x] T05: Install JDK 21 into `.tools/` (project-local, git-ignored); add `.gitignore`
+* [ ] T06: user-service (users, login, admin seed, organizer flag, attendance scan)
+* [ ] T07: event-service
+* [ ] T08: pass-service (token + QR)
+* [ ] T09: client page
+* [ ] T10: end-to-end run, README
+
+*Add new tasks at the bottom with the next free ID. Never reuse or renumber IDs.*
+
+## Change Log
+
+<!-- Newest first. Copy the template below for each entry. -->
+
+<!--
+### YYYY-MM-DD HH:MM — Agent (Model) — Short title
+
+* **Task:** Txx — what was attempted
+* **Status:** DONE | WORKING | FAILED
+* **Files:** created / edited / deleted / moved
+* **Details:** what changed and how it was verified
+* **Notes / Errors:** anything the next agent needs to know
+-->
+
+### 2026-10-20 — Claude (Sonnet 5.5) — T05: JDK 21 + .gitignore
+
+* **Task:** T05
+* **Status:** DONE
+* **Files:** created `.gitignore`, `.tools/jdk-21/` (Temurin 21.0.12.1, from api.adoptium.net, git-ignored)
+* **Details:** project-local only; no PATH/registry change. Verified with `.tools\jdk-21\bin\java.exe -version`. Use it by setting `JAVA_HOME` to `.tools/jdk-21` per shell. System Java 8 untouched.
+* **Notes / Errors:** first rename of the extracted folder was denied; succeeded on retry.
+
+### 2026-10-20 — Claude (Sonnet 5.5) — T04: design finalised
+
+* **Task:** T04
+* **Status:** DONE (design agreed; waiting for owner to commit and say go)
+* **Files:** edited `PROJECT.md`
+* **Details:** JDK 21 into `.tools/` (not installed yet, first task after go); events viewable without login; admin creates events and promotes organizers; event-service checks tokens via user-service `GET /users/me`.
+
+### 2026-10-20 — Claude (Sonnet 5.5) — T04: roles
+
+* **Task:** T04
+* **Status:** WORKING
+* **Files:** edited `PROJECT.md`
+* **Details:** added isOrganizer flag, hardcoded admin (id 1), admin promotes organizers, only organizer/admin scan. Open: Java version, who creates events.
+
+### 2026-10-20 — Claude (Sonnet 5.5) — T04: user-service change
+
+* **Task:** T04
+* **Status:** WORKING
+* **Files:** rewrote `PROJECT.md`
+* **Details:** attendance-service renamed to user-service (users + simple auth + attendance). Event registration now takes a userId. Java version open: system is Java 8 only.
+
+### 2026-10-20 — Claude (Sonnet 5.5) — T04: draft PROJECT.md
+
+* **Task:** T04 — design discussion
+* **Status:** WORKING
+* **Files:** created `PROJECT.md`; edited `log.md`
+* **Details:** recorded confirmed choices (H2 per service, no gateway, 3 services, static Tailwind client served by Spring Boot, webcam + paste scan, reject duplicates). Awaiting owner sign-off on the endpoint table before any code.
+
+### 2026-10-20 — Claude (Sonnet 5.5) — T01: init CLAUDE.md and log.md
+
+* **Task:** T01 — reset both files as generic templates for a new Java project
+* **Status:** DONE
+* **Files:** edited `CLAUDE.md`, `log.md`
+* **Details:** kept the process rules (log tracking, archive skip, workflow, dependencies, git, end-of-run); dropped all MITPass-specific tables and history.
+* **Notes / Errors:** project name, stack and commands are left as TODO placeholders.
