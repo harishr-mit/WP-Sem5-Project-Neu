@@ -35,11 +35,11 @@ Shared context for every agent working in this directory. Read this file **befor
 
 * [x] T04: Agree design with owner and record it in `PROJECT.md`
 * [x] T05: Install JDK 21 into `.tools/` (project-local, git-ignored); add `.gitignore`
-* [ ] T06: user-service (users, login, admin seed, organizer flag, attendance scan)
-* [ ] T07: event-service
-* [ ] T08: pass-service (token + QR)
-* [ ] T09: client page
-* [ ] T10: end-to-end run, README
+* [x] T06: user-service (users, login, admin seed, organizer flag, attendance scan)
+* [x] T07: event-service
+* [x] T08: pass-service (token + QR)
+* [x] T09: client page
+* [x] T10: end-to-end run, README
 
 *Add new tasks at the bottom with the next free ID. Never reuse or renumber IDs.*
 
@@ -56,6 +56,20 @@ Shared context for every agent working in this directory. Read this file **befor
 * **Details:** what changed and how it was verified
 * **Notes / Errors:** anything the next agent needs to know
 -->
+
+### 2026-10-20 — Claude (Sonnet 5.5) — T11: README
+
+* **Task:** T11 — README (what it is, quick start, command reference, troubleshooting)
+* **Status:** DONE
+* **Files:** created `README.md`
+* **Details:** commands were taken from what was run this session; the "run from project root / JAVA_HOME" quick-start steps were not re-run after writing.
+
+### 2026-10-20 — Claude (Sonnet 5.5) — T06-T09: code written; approved global install
+
+* **Task:** T06, T07, T08, T09 (code written, not yet built/run); verification tooling
+* **Status:** DONE
+* **Files:** created `user-service/`, `event-service/`, `pass-service/`, `client/` (Spring Initializr skeletons, Boot 4.1.1, Java 21, groupId com.example) with entities, repos, controllers, `application.properties`, `client/.../static/index.html`
+* **Details:** **Approved global install (owner asked explicitly):** `npm install -g playwright` (v1.64.1, user scope `%APPDATA%\npm`). Chromium 1248 already cached in `%LOCALAPPDATA%\ms-playwright`, matches. Ports moved to 9080-9083 (8080-8083 held by the unrelated 'WP Sem 5' project, left running). Boot 4 property is `spring.web.error.include-message`. Fixed client bug: inline `createEvent()` collided with `document.createEvent` (renamed `addEvent`). Verified with Playwright (scratchpad `e2e.js`): public events, signup/login, register, QR image loads, plain user scan 403, admin scan marks attendance, rescan 409 'already checked in'. All 4 services stopped, test H2 data deleted. Design tweak: event-service register now also calls pass-service to create the pass; `GET /registrations/mine` returns pass tokens.
 
 ### 2026-10-20 — Claude (Sonnet 5.5) — T05: JDK 21 + .gitignore
 

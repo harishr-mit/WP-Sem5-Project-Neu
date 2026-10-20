@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Check-in</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-slate-100 min-h-screen text-slate-800">
+
+<header class="bg-indigo-600 text-white shadow">
+  <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+    <h1 class="text-xl font-bold">🎟️ Event Check-in</h1>
+    <div id="userbox" class="text-sm"></div>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+  <div id="msg" class="hidden rounded-lg px-4 py-2 text-sm"></div>
+
+  <section id="login-card" class="bg-white rounded-2xl shadow p-5">
+    <h2 class="font-semibold text-lg mb-3">Sign up / Log in</h2>
+    <div class="flex flex-wrap gap-2">
+      <input id="username" placeholder="username" class="border rounded-lg px-3 py-2 flex-1 min-w-[140px]">
+      <input id="password" type="password" placeholder="password" class="border rounded-lg px-3 py-2 flex-1 min-w-[140px]">
+      <button onclick="login()" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700">Log in</button>
+      <button onclick="signup()" class="bg-slate-200 rounded-lg px-4 py-2 hover:bg-slate-300">Sign up</button>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl shadow p-5">
+    <h2 class="font-semibold text-lg mb-3">Events</h2>
+    <div id="events" class="grid sm:grid-cols-2 gap-4"></div>
+  </section>
+
+  <section id="passes-card" class="hidden bg-white rounded-2xl shadow p-5">
+    <h2 class="font-semibold text-lg mb-3">My passes</h2>
+    <div id="passes" class="grid sm:grid-cols-2 gap-4"></div>
+  </section>
+
+  <section id="admin-card" class="hidden bg-white rounded-2xl shadow p-5">
+    <h2 class="font-semibold text-lg mb-3">Admin</h2>
+    <h3 class="font-medium mb-2">Create event</h3>
+    <div class="grid sm:grid-cols-2 gap-2 mb-4">
+      <input id="ev-name" placeholder="name" class="border rounded-lg px-3 py-2">
+      <input id="ev-location" placeholder="location" class="border rounded-lg px-3 py-2">
+      <input id="ev-date" type="datetime-local" class="border rounded-lg px-3 py-2">
+      <input id="ev-desc" placeholder="description" class="border rounded-lg px-3 py-2">
+      <button onclick="addEvent()" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 sm:col-span-2">Create event</button>
+    </div>
+    <h3 class="font-medium mb-2">Users</h3>
+    <div id="users" class="space-y-2"></div>
+  </section>
+
+  <section id="scan-card" class="hidden bg-white rounded-2xl shadow p-5">
+    <h2 class="font-semibold text-lg mb-3">Scan pass</h2>
+    <div id="reader" class="max-w-sm mb-3"></div>
+    <button onclick="startScan()" class="bg-emerald-600 text-white rounded-lg px-4 py-2 hover:bg-emerald-700 mb-4">Start camera</button>
+    <div class="flex flex-wrap gap-2 mb-4">
+      <input id="scan-token" placeholder="or paste pass token" class="border rounded-lg px-3 py-2 flex-1 min-w-[200px]">
+      <button onclick="scan(document.getElementById('scan-token').value)" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700">Verify &amp; mark</button>
+    </div>
+    <h3 class="font-medium mb-2">Attendance</h3>
+    <ul id="attendance" class="text-sm space-y-1"></ul>
+  </section>
+</main>
+
+<script>
+const USER = 'http://localhost:9083', EVENT = 'http://localhost:9081', PASS = 'http://localhost:9082';
+let token = localStorage.getItem('token');
+let me = null;
+
+function show(text, ok = true) {
+  const m = document.getElementById('msg');
+  m.textContent = text;
+  m.className = 'rounded-lg px-4 py-2 text-sm ' + (ok ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800');
+}
+
+async function api(url, method = 'GET', body) {
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: token } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    let t = '';
+    try { t = (await res.json()).message || ''; } catch (e) {}
+    show(method + ' ' + res.status + ' ' + t, false);
+    throw new Error(res.status);
+  }
+  return res.json();
+}
+
+const $ = id => document.getElementById(id);
+
+async function signup() {
+  await api(USER + '/users/signup', 'POST', { username: $('username').value, password: $('password').value });
+  show('Signed up, now log in');
+}
+
+async function login() {
+  const r = await api(USER + '/users/login', 'POST', { username: $('username').value, password: $('password').value });
+  token = r.token;
+  localStorage.setItem('token', token);
+  show('Welcome ' + r.user.username);
+  refresh();
+}
+
+function logout() {
+  token = null;
+  localStorage.removeItem('token');
+  refresh();
+}
+
+async function loadEvents() {
+  const evs = await api(EVENT + '/events');
+  $('events').innerHTML = evs.map(e => `
+    <div class="border rounded-xl p-4">
+      <div class="font-semibold">${e.name}</div>
+      <div class="text-sm text-slate-500">📍 ${e.location || '-'} · 🕒 ${e.dateTime || '-'}</div>
+      <p class="text-sm my-2">${e.description || ''}</p>
+      ${me ? `<button onclick="register(${e.id})" class="bg-indigo-600 text-white rounded-lg px-3 py-1 text-sm hover:bg-indigo-700">Register</button>` : ''}
+    </div>`).join('') || '<p class="text-slate-500 text-sm">No events yet.</p>';
+}
+
+async function register(id) {
+  await api(EVENT + '/events/' + id + '/register', 'POST');
+  show('Registered! Pass created below.');
+  loadPasses();
+}
+
+async function loadPasses() {
+  const ps = await api(EVENT + '/registrations/mine');
+  $('passes').innerHTML = ps.map(p => `
+    <div class="border rounded-xl p-4 text-center">
+      <div class="font-semibold mb-2">${p.eventName}</div>
+      <img src="${PASS}/passes/${p.passToken}/qr" class="mx-auto w-44 h-44" alt="QR">
+      <div class="text-xs text-slate-400 mt-2 break-all">${p.passToken}</div>
+    </div>`).join('') || '<p class="text-slate-500 text-sm">No passes yet.</p>';
+}
+
+async function addEvent() {
+  await api(EVENT + '/events', 'POST', {
+    name: $('ev-name').value, location: $('ev-location').value,
+    dateTime: $('ev-date').value, description: $('ev-desc').value
+  });
+  show('Event created');
+  loadEvents();
+}
+
+async function loadUsers() {
+  const us = await api(USER + '/users');
+  $('users').innerHTML = us.map(u => `
+    <div class="flex items-center justify-between border rounded-lg px-3 py-2 text-sm">
+      <span>#${u.id} ${u.username} ${u.admin ? '(admin)' : u.organizer ? '(organizer)' : ''}</span>
+      ${u.admin || u.organizer ? '' : `<button onclick="makeOrganizer(${u.id})" class="bg-slate-200 rounded px-3 py-1 hover:bg-slate-300">Make organizer</button>`}
+    </div>`).join('');
+}
+
+async function makeOrganizer(id) {
+  await api(USER + '/users/' + id + '/organizer', 'PUT');
+  loadUsers();
+}
+
+async function scan(t) {
+  const a = await api(USER + '/attendance/scan', 'POST', { token: t.trim() });
+  show('✅ Attendance marked for registration #' + a.registrationId);
+  loadAttendance();
+}
+
+async function loadAttendance() {
+  const as = await api(USER + '/attendance');
+  $('attendance').innerHTML = as.map(a =>
+    `<li class="border rounded-lg px-3 py-1">Registration #${a.registrationId} · ${a.scannedAt}</li>`).join('');
+}
+
+let scanner = null;
+function startScan() {
+  scanner = new Html5Qrcode('reader');
+  scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, async text => {
+    await scanner.stop();
+    scan(text).catch(() => {});
+  }).catch(e => show('Camera failed: ' + e, false));
+}
+
+async function refresh() {
+  me = null;
+  if (token) {
+    try { me = await api(USER + '/users/me'); } catch (e) { token = null; }
+  }
+  $('login-card').classList.toggle('hidden', !!me);
+  $('userbox').innerHTML = me ? `${me.username} <button onclick="logout()" class="underline ml-2">log out</button>` : '';
+  $('passes-card').classList.toggle('hidden', !me);
+  $('admin-card').classList.toggle('hidden', !(me && me.admin));
+  $('scan-card').classList.toggle('hidden', !(me && (me.admin || me.organizer)));
+  loadEvents();
+  if (me) loadPasses();
+  if (me && me.admin) loadUsers();
+  if (me && (me.admin || me.organizer)) loadAttendance();
+}
+
+refresh();
+</script>
+</body>
+</html>

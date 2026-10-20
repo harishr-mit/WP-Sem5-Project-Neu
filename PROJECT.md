@@ -20,16 +20,16 @@ Plus one H2 file database per backend service (not a separate component). Nothin
 * Spring Boot MVC, Spring Data JPA (Hibernate), H2 file DB per service
 * ORM only: data access through JPA entities + Spring Data repositories; Hibernate creates the tables (`spring.jpa.hibernate.ddl-auto=update`). No SQL scripts, no raw queries, no migrations.
 * Build tool: Maven, via the committed wrapper (`mvnw`) - nothing installed globally
-* Java 21 (confirmed): project-local JDK in `.tools/` (git-ignored), installed as the first task after the owner says go. System Java 8 is not touched; shell uses `JAVA_HOME=.tools/jdk-21`. Spring Boot 3.x.
+* Java 21 (confirmed): project-local JDK in `.tools/` (git-ignored), installed as the first task after the owner says go. System Java 8 is not touched; shell uses `JAVA_HOME=.tools/jdk-21`. Spring Boot 4.1.1 (what start.spring.io gave). Ports are 9080-9083 because 8080-8083 were taken by another project.
 * No API gateway; client calls each service directly (CORS enabled)
 
 ## Services
 
 | Service | Port | Owns | Endpoints (proposed) |
 |-|-|-|-|
-| event-service | 8081 | Event, Registration | `POST /events`, `GET /events`, `POST /events/{id}/register` (login required) |
-| pass-service | 8082 | Pass | `POST /passes` (registrationId) -> pass with UUID token; `GET /passes/{token}/qr` -> PNG; `GET /passes/{token}/verify` |
-| user-service | 8083 | User, Attendance | `POST /users/signup`, `POST /users/login` -> session token; `POST /attendance/scan` (QR token, needs login); `GET /attendance` |
+| event-service | 9081 | Event, Registration | `POST /events`, `GET /events`, `POST /events/{id}/register` (login required; also calls pass-service to create the pass); `GET /registrations/mine` |
+| pass-service | 9082 | Pass | `POST /passes` (registrationId) -> pass with UUID token; `GET /passes/{token}/qr` -> PNG; `GET /passes/{token}/verify` |
+| user-service | 9083 | User, Attendance | `POST /users/signup`, `POST /users/login` -> session token; `POST /attendance/scan` (QR token, needs login); `GET /attendance` |
 
 * Auth (student-level): username + plain-text password stored in user-service; login returns a random token kept in the DB; sent as `Authorization` header.
 * Roles (confirmed): User has an `isOrganizer` boolean (default false). One admin, hardcoded: user-service seeds a user with id 1 (`admin` / `admin`) on startup; "is admin" = `id == 1`. Admin counts as an organizer.
@@ -46,7 +46,7 @@ Plus one H2 file database per backend service (not a separate component). Nothin
 
 ## Client
 
-* `client` (port 8080): Spring Boot app that only serves static files (one main class, no controllers).
+* `client` (port 9080): Spring Boot app that only serves static files (one main class, no controllers).
 * Single `index.html`, Tailwind via CDN, plain JS `fetch` to the services. Polished card layout.
 * Sections: event list (visible without login); sign up / login; register for event -> pass with QR image; admin panel (create event, make organizer); scan (organizer/admin only, hidden otherwise).
 * Scan: webcam via `html5-qrcode` (CDN) with a paste-token fallback box.
@@ -54,3 +54,8 @@ Plus one H2 file database per backend service (not a separate component). Nothin
 ## Out of scope
 
 Gateway, service discovery, Docker, password hashing, roles, validation, tests beyond the bare minimum, pagination, emailing the pass.
+
+## Run
+
+Per service folder (`user-service`, `pass-service`, `event-service`, `client`), with `JAVA_HOME` set to `.tools/jdk-21`:
+`./mvnw spring-boot:run`, then open http://localhost:9080. Start user-service and pass-service before event-service. Login `admin` / `admin` is the only admin. H2 files are created under each service's `data/` folder.
