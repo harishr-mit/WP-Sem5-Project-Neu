@@ -23,14 +23,22 @@ Roles: anyone can view events. Logged-in users register and see their passes. Th
 
 Needs the project-local JDK in `.tools/jdk-21` and an internet connection (Maven dependencies, CDN scripts).
 
-Open four terminals (Git Bash), one per service, in this order:
+Open four terminals at the project root, one per service, and start the services in this order: `user-service`, `pass-service`, `event-service`, `client`. Set `JAVA_HOME` in each terminal (it only lasts for that terminal).
+
+PowerShell (Windows):
+
+```powershell
+$env:JAVA_HOME = "$PWD\.tools\jdk-21"
+cd user-service
+.\mvnw.cmd spring-boot:run
+```
+
+Git Bash:
 
 ```bash
 export JAVA_HOME="$PWD/.tools/jdk-21"
 cd user-service && ./mvnw spring-boot:run
 ```
-
-Repeat for `pass-service`, `event-service`, then `client` (set `JAVA_HOME` again in each terminal, run from the project root).
 
 Then open http://localhost:9080 and:
 
@@ -40,16 +48,18 @@ Then open http://localhost:9080 and:
 
 ## Command reference
 
-| Task | Command (from the service folder) |
-|-|-|
-| Run a service | `./mvnw spring-boot:run` |
-| Build a jar | `./mvnw -DskipTests package` |
-| Run the jar | `"$JAVA_HOME/bin/java" -jar target/<service>-0.0.1-SNAPSHOT.jar` |
-| Run tests | `./mvnw test` |
-| Check Java in use | `"$JAVA_HOME/bin/java" -version` |
-| Who is on a port (PowerShell) | `Get-NetTCPConnection -State Listen -LocalPort 9083` |
-| Stop it (PowerShell) | `Stop-Process -Id <pid>` |
-| Reset a service's data | stop it, delete its `data/` folder |
+Run from the service folder. PowerShell uses `.\mvnw.cmd`, Git Bash uses `./mvnw`.
+
+| Task | PowerShell | Git Bash |
+|-|-|-|
+| Run a service | `.\mvnw.cmd spring-boot:run` | `./mvnw spring-boot:run` |
+| Build a jar | `.\mvnw.cmd -DskipTests package` | `./mvnw -DskipTests package` |
+| Run the jar | `& "$env:JAVA_HOME\bin\java.exe" -jar target\<service>-0.0.1-SNAPSHOT.jar` | `"$JAVA_HOME/bin/java" -jar target/<service>-0.0.1-SNAPSHOT.jar` |
+| Run tests | `.\mvnw.cmd test` | `./mvnw test` |
+| Check Java in use | `& "$env:JAVA_HOME\bin\java.exe" -version` | `"$JAVA_HOME/bin/java" -version` |
+| Who is on a port | `Get-NetTCPConnection -State Listen -LocalPort 9083` | same (run in PowerShell) |
+| Stop it | `Stop-Process -Id <pid>` | same (run in PowerShell) |
+| Reset a service's data | stop it, delete its `data` folder | `rm -rf data` |
 
 API quick reference:
 
@@ -64,7 +74,7 @@ Authenticated calls send the login token in an `Authorization` header.
 ## Troubleshooting
 
 * **"Port 908x was already in use"**: another process holds the port. Find it with the PowerShell command above and stop it, or change `server.port` in that service's `application.properties` (and the URLs at the top of the script in `client/src/main/resources/static/index.html`, plus `user.service.url` / `pass.service.url` in the other services).
-* **Build fails with "release version 21 not supported" or class version errors**: `JAVA_HOME` is not set, so system Java 8 is being used. Export `JAVA_HOME` to `.tools/jdk-21` in that terminal.
+* **Build fails with "release version 21 not supported" or class version errors**: `JAVA_HOME` is not set, so system Java 8 is being used. Set `JAVA_HOME` to `.tools/jdk-21` in that terminal (see Quick start).
 * **Page loads but events or login do nothing / red message at top**: a backend service is not running. Start all four; user-service and pass-service before event-service.
 * **Registering says "login required" or 401**: the saved token is stale (for example after wiping `data/`). Log out and log in again.
 * **Registering fails with a 500 error**: pass-service is down, since event-service calls it to create the pass.

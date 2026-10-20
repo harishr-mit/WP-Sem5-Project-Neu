@@ -57,6 +57,13 @@ Shared context for every agent working in this directory. Read this file **befor
 * **Notes / Errors:** anything the next agent needs to know
 -->
 
+### 2026-10-20 — Claude (Sonnet 5.5) — T11b: README Windows commands
+
+* **Task:** T11
+* **Status:** DONE
+* **Files:** edited `README.md`
+* **Details:** quick start and command table now have PowerShell and Git Bash variants. Verified `.\mvnw.cmd spring-boot:run` under PowerShell with `$env:JAVA_HOME` set: user-service started on 9083; then stopped it and deleted `user-service/data`. cmd.exe not tested.
+
 ### 2026-10-20 — Claude (Sonnet 5.5) — T11: README
 
 * **Task:** T11 — README (what it is, quick start, command reference, troubleshooting)
