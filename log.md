@@ -54,6 +54,16 @@ Shared context for every agent working in this directory. Read this file **befor
 * [x] T19: `start-demo.ps1`, README update, `demo.md`
 * [x] T20: End-to-end verify, stop services, wipe data
 
+* [x] T21: `start-demo.ps1 -Only <service>` + `stop-demo.ps1`
+* [x] T22: Event capacity + "Full" state (event-service field, register check, seed, client, admin form)
+* [x] T23: Attendee-side "Checked in" stamp on the pass (user-service `GET /attendance/mine`, client polling)
+* [x] T24: Phone-width pass (390px screenshots, fix what breaks)
+* [x] T25: Pre-flight checklist in `demo.md`
+* [x] T26: Fallback screen recording of the demo
+* [x] T27: Docs (README, PROJECT.md), final verify, stop services, wipe data
+
+* [x] T28: Admin tab shows who checked in to which event (client only; data already in `GET /attendance`)
+
 *Add new tasks at the bottom with the next free ID. Never reuse or renumber IDs.*
 
 ## Change Log
@@ -69,6 +79,14 @@ Shared context for every agent working in this directory. Read this file **befor
 * **Details:** what changed and how it was verified
 * **Notes / Errors:** anything the next agent needs to know
 -->
+
+### 2026-10-21 — Claude (Sonnet 5.5) — T21-T28: scripts, capacity, stamp, mobile, checklist, recording, admin check-ins
+
+* **Task:** T21-T28
+* **Status:** DONE
+* **Files:** created `stop-demo.ps1`, `demo-fallback/demo-fallback.webm`; rewrote `start-demo.ps1` (adds `-Only`); edited `demo.md` (checklist, steps 9b-11), `README.md`, `PROJECT.md`, `log.md`, `event-service/.../Event.java` + `EventController.java`, `user-service/.../Attendance.java` + `AttendanceRepository.java` + `UserController.java`, `client/.../static/index.html`
+* **Details:** capacity + Full state (409 "event is full"); `GET /attendance/mine` + Checked-in stamp with 3 s polling; admin "Who checked in" panel; phone-width fix (desktop tab bar leaked into the header below sm; brand no-wrap); scan box cleared after every scan (a stale token was being appended to the next one). Verified with Playwright at 1100px and 390px (full flow, no page errors; stamp appeared on attendee side after organizer scan). `-Only client` and `-Stop` verified. Recording made with Playwright (about 2 min, 1280x720, visible cursor), re-recorded 3 times after finding script bugs; last run confirmed via API (Demo Day created, both check-ins present).
+* **Notes:** camera scan still untested (no webcam), recording uses the paste box. The video is about 7.7 MB and is not git-ignored; delete or ignore it if you do not want it in the repo. Services stopped and DB files deleted at the end.
 
 ### 2026-10-21 — Claude (Sonnet 5.5) — T15-T20: demo features, start script, docs
 

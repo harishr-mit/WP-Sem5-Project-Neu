@@ -59,6 +59,10 @@ Plus one H2 file database per backend service (not a separate component). Nothin
 * To reset to this state: `.\start-demo.ps1` (stops services, deletes `*/data/*.db`, starts in order, opens the browser). `-Stop` stops everything. Presenter script: `demo.md`.
 * Demo script: login as Attendee -> register -> My passes (ticket + QR) -> log out -> Organizer -> Scan -> paste token or show the QR to the camera -> green result; scan again -> red "Already checked in". Admin tab creates events and promotes users.
 * New: `GET /registrations/{id}` and `GET /events/stats` (event-service); user-service calls the first on scan and stores `username`, `eventName`, `eventId` on Attendance (fields added only). Scan result shows the name; the Scan tab shows checked-in / registered per event.
+* Capacity: `Event.capacity` (null = unlimited). Register returns 409 "event is full" at the limit. Seed: Hack 50, Expo **1** (alice holds the seat, so it shows Full), Cultural Night 100, Career Fair 200. `GET /events/stats` includes `capacity` (0 = unlimited).
+* Attendee "Checked in" stamp: user-service `GET /attendance/mine` (scanned pass tokens of the logged-in user, needs `Attendance.userId`); the My passes tab polls every 3 s.
+* Admin "Who checked in": Admin tab groups `GET /attendance` by event (names and times).
+* Scripts: `start-demo.ps1` (`-Keep`, `-Only <service>`, `-NoBrowser`, `-Stop`), `stop-demo.ps1` (`-Only <service>`).
 * `GET /registrations/mine` now also returns `eventId`, `location`, `dateTime` (fields added, none removed).
 
 ## Explicitly NOT doing (owner decision, 1-hour budget)

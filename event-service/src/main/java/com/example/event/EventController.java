@@ -34,15 +34,16 @@ public class EventController {
     CommandLineRunner seedEvents() {
         return args -> {
             if (events.count() > 0) return;
+            // last column = capacity; the Expo has 1 seat and alice holds it, so it shows as Full in the demo
             String[][] d = {
-                {"Hack the Campus 2026", "Main Auditorium", "2026-11-14T09:00", "24-hour student hackathon with mentors, snacks and prizes. Teams of up to four."},
-                {"AI & Robotics Expo", "Engineering Block, Hall B", "2026-11-21T10:30", "Live robot demos, student project showcase and a keynote on applied AI."},
-                {"Cultural Night", "Open Air Theatre", "2026-12-05T18:00", "Music, dance and food stalls. Bring friends, doors open at 5:30 PM."},
-                {"Career Fair", "Convention Centre", "2026-12-12T11:00", "40+ companies, resume reviews and on-the-spot interviews."}
+                {"Hack the Campus 2026", "Main Auditorium", "2026-11-14T09:00", "24-hour student hackathon with mentors, snacks and prizes. Teams of up to four.", "50"},
+                {"AI & Robotics Expo", "Engineering Block, Hall B", "2026-11-21T10:30", "Live robot demos, student project showcase and a keynote on applied AI.", "1"},
+                {"Cultural Night", "Open Air Theatre", "2026-12-05T18:00", "Music, dance and food stalls. Bring friends, doors open at 5:30 PM.", "100"},
+                {"Career Fair", "Convention Centre", "2026-12-12T11:00", "40+ companies, resume reviews and on-the-spot interviews.", "200"}
             };
             for (String[] x : d) {
                 Event e = new Event();
-                e.name = x[0]; e.location = x[1]; e.dateTime = x[2]; e.description = x[3];
+                e.name = x[0]; e.location = x[1]; e.dateTime = x[2]; e.description = x[3]; e.capacity = Integer.valueOf(x[4]);
                 events.save(e);
             }
             // alice is user id 4 (admin, organizer, demo, alice); needs pass-service running
@@ -81,7 +82,9 @@ public class EventController {
     public Registration register(@PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String token) {
         Long userId = ((Number) me(token).get("id")).longValue();
-        events.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "no such event"));
+        Event ev = events.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "no such event"));
+        if (ev.capacity != null && registrations.countByEventId(id) >= ev.capacity)
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "event is full");
         if (registrations.existsByEventIdAndUserId(id, userId))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "already registered");
         return createRegistration(id, userId);
@@ -109,7 +112,7 @@ public class EventController {
     @GetMapping("/events/stats")
     public List<Map<String, Object>> stats() {
         return events.findAll().stream().map(e -> Map.<String, Object>of("eventId", e.id, "name", e.name,
-                "registered", registrations.countByEventId(e.id))).toList();
+                "registered", registrations.countByEventId(e.id), "capacity", e.capacity == null ? 0 : e.capacity)).toList();
     }
 
     @GetMapping("/registrations/mine")

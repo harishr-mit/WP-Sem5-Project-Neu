@@ -2,7 +2,18 @@
 
 Total: about 8 minutes. Five parts, in this order: problem, approach, solution, tech, live demo.
 
-**Before you go on:** run `.\start-demo.ps1` (about 1 minute, wipes and reseeds everything). Keep the browser on http://localhost:9080 logged out. Have your phone ready if you want to show a real camera scan.
+## Pre-flight checklist (15 minutes before)
+
+- [ ] Laptop charged and plugged in; notifications off; browser zoom 100%.
+- [ ] Internet works (Tailwind, fonts and the QR scanner load from CDNs).
+- [ ] Run `.\start-demo.ps1`. It takes about 1 minute and ends with "Ready". It wipes and reseeds everything, so do this last, right before presenting.
+- [ ] Browser on http://localhost:9080, **logged out** (log out if you tested). Demo mode box visible.
+- [ ] Camera: click Start camera once as organizer, allow the permission, then log out. Phone ready with brightness up if you scan from it.
+- [ ] Event list shows "AI & Robotics Expo" as Full and the other three with seats left.
+- [ ] Fallback video opens: `demo-fallback\demo-fallback.webm` (about 2 minutes, no sound). Keep it in a second window.
+- [ ] Know the reset: `.\start-demo.ps1` (everything), `.\start-demo.ps1 -Only event-service` (one service), `.\stop-demo.ps1` (stop all).
+
+If the demo is mid-way and breaks: do not debug live. Play the fallback video and talk over it.
 
 ---
 
@@ -57,7 +68,9 @@ The login page has a **Demo mode** box listing the accounts. Click a row to log 
 | 7 | Scan the demo user's pass: camera on the QR (phone or enlarged on screen) or paste the token | Big green "Checked in" with the name and event. |
 | 8 | Scan the same pass again | Red "Already checked in". One pass, one entry. |
 | 9 | Log out, click **alice**, open **My passes**, copy a token, log in as organizer, scan it | Second attendee, second event. The bar and list update. |
-| 10 | Log out, click **admin**, **Admin** tab: create an event, promote a user | Admin controls. New event shows up in the list straight away. |
+| 9b | On the attendee's side (second window), the pass flips to a green **Checked in** stamp within 3 seconds | Attendee sees the result too. Optional, needs two windows. |
+| 10 | Log out, click **admin**, **Admin** tab: scroll to **Who checked in** | Admin sees each event with the names and times of everyone checked in. |
+| 11 | Same tab: create an event with a capacity, promote a user | New event shows in the list straight away. A capacity of 1 shows "Full" once taken (the AI & Robotics Expo is already full in the seed data). |
 
 Tip for step 7: if the camera is flaky, use the paste box. It exercises exactly the same code path.
 

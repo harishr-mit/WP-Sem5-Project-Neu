@@ -11,4 +11,5 @@ public class Event {
     public String location;
     public String dateTime;
     public String description;
+    public Integer capacity; // null = unlimited
 }

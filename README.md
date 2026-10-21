@@ -26,12 +26,16 @@ From the project root in PowerShell:
 ```powershell
 .\start-demo.ps1            # reset data, start all 4 services in order, open the browser (about 1 minute)
 .\start-demo.ps1 -Keep      # same, but keep existing data
-.\start-demo.ps1 -Stop      # stop all 4 services
+.\start-demo.ps1 -Only event-service   # restart ONE service, keep data (user-service, pass-service, event-service, client)
+.\stop-demo.ps1                          # stop all 4 services (also: .\start-demo.ps1 -Stop)
+.\stop-demo.ps1 -Only client            # stop one service
 ```
+
+Restart a service after changing its code. The client copies its static files at startup, so restart it after editing `index.html` (and hard-refresh the browser). Seeds only run on an empty database, so a seed change needs the full `.\start-demo.ps1`.
 
 `-NoBrowser` skips opening the browser. If PowerShell blocks the script, run it once with `powershell -ExecutionPolicy Bypass -File .\start-demo.ps1`. The script sets `JAVA_HOME` for itself only and starts each service in a minimized window.
 
-Demo data (created on first start of an empty database; password = username): `admin`, `organizer`, `demo`, `alice` (alice already has passes for two events), plus four sample events. The login page lists these in a **Demo mode** box. The walkthrough for presenting is in [demo.md](demo.md).
+Demo data (created on first start of an empty database; password = username): `admin`, `organizer`, `demo`, `alice` (alice already has passes for two events), plus four sample events. The login page lists these in a **Demo mode** box. The walkthrough and pre-flight checklist for presenting are in [demo.md](demo.md). A fallback screen recording of the whole flow is in `demo-fallback/demo-fallback.webm` (recorded from the seeded state; no sound).
 
 ## Quick start (manual, one terminal per service)
 
@@ -79,9 +83,9 @@ API quick reference:
 
 | Service | Endpoint |
 |-|-|
-| event-service | `GET /events` (public), `GET /events/stats` (registered count per event, public), `POST /events` (admin), `POST /events/{id}/register`, `GET /registrations/mine`, `GET /registrations/{id}` |
+| event-service | `GET /events` (public), `GET /events/stats` (registered count and capacity per event, public), `POST /events` (admin), `POST /events/{id}/register`, `GET /registrations/mine`, `GET /registrations/{id}` |
 | pass-service | `POST /passes`, `GET /passes/{token}/qr`, `GET /passes/{token}/verify` |
-| user-service | `POST /users/signup`, `POST /users/login`, `GET /users/me`, `GET /users` (admin), `PUT /users/{id}/organizer` (admin), `POST /attendance/scan` (also records attendee and event name), `GET /attendance` |
+| user-service | `POST /users/signup`, `POST /users/login`, `GET /users/me`, `GET /users` (admin), `PUT /users/{id}/organizer` (admin), `POST /attendance/scan` (also records attendee and event name), `GET /attendance`, `GET /attendance/mine` (pass tokens already scanned for the logged-in user) |
 
 Authenticated calls send the login token in an `Authorization` header.
 

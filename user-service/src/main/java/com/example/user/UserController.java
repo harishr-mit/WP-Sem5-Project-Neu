@@ -130,6 +130,7 @@ public class UserController {
         a.scannedBy = scanner.id;
         try {
             Map<?, ?> reg = rest.get().uri(eventUrl + "/registrations/" + a.registrationId).retrieve().body(Map.class);
+            a.userId = ((Number) reg.get("userId")).longValue();
             a.eventId = ((Number) reg.get("eventId")).longValue();
             a.eventName = (String) reg.get("eventName");
             a.username = users.findById(((Number) reg.get("userId")).longValue()).map(u -> u.username).orElse(null);
@@ -138,6 +139,12 @@ public class UserController {
         }
         a.scannedAt = LocalDateTime.now();
         return attendances.save(a);
+    }
+
+    // pass tokens of the logged-in user that have been scanned (lets the pass show "Checked in")
+    @GetMapping("/attendance/mine")
+    public List<String> mine(@RequestHeader(value = "Authorization", required = false) String token) {
+        return attendances.findByUserId(me(token).id).stream().map(a -> a.passToken).toList();
     }
 
     @GetMapping("/attendance")
