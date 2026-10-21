@@ -39,6 +39,14 @@ public class UserController {
                 a.username = "admin";
                 a.password = "admin";
                 users.save(a);
+                // demo accounts for the product review
+                for (String n : new String[] {"organizer", "demo", "alice"}) {
+                    User u = new User();
+                    u.username = n;
+                    u.password = n;
+                    u.organizer = n.equals("organizer");
+                    users.save(u);
+                }
             }
         };
     }

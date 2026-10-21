@@ -4,80 +4,129 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Event Check-in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Public+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com/3.4.16"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  body { font-family: "Public Sans", system-ui, sans-serif; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .ticket { background: radial-gradient(circle at 0 62%, transparent 10px, #fff 11px) left / 51% 100% no-repeat,
+                        radial-gradient(circle at 100% 62%, transparent 10px, #fff 11px) right / 51% 100% no-repeat; }
+  .skel { background: #e7e5e4; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .5; } }
+  @keyframes pop { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .pop { animation: pop .18s ease-out; }
+  input, textarea { outline: none; } input:focus, textarea:focus { border-color: #1c1917; }
+</style>
 </head>
-<body class="bg-gradient-to-br from-indigo-50 to-slate-100 min-h-screen text-slate-800">
+<body class="bg-stone-50 min-h-screen text-stone-900">
 
-<header class="bg-indigo-600 text-white shadow">
-  <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-    <h1 class="text-xl font-bold">🎟️ Event Check-in</h1>
-    <div id="userbox" class="text-sm"></div>
+<header class="bg-white border-b border-stone-200 sticky top-0 z-30">
+  <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+    <div class="font-bold tracking-tight flex items-center gap-2"><span class="w-3 h-3 bg-orange-700 inline-block"></span>Check-in</div>
+    <nav id="tabs" class="hidden sm:flex gap-6 text-sm h-full"></nav>
+    <div id="userbox" class="text-sm text-stone-600"></div>
   </div>
+  <nav id="tabs-m" class="sm:hidden flex gap-5 text-sm px-4 overflow-x-auto border-t border-stone-100 h-10"></nav>
 </header>
 
-<main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
-  <div id="msg" class="hidden rounded-lg px-4 py-2 text-sm"></div>
+<section id="hero" class="hidden">
+  <div class="max-w-4xl mx-auto px-4 pt-12 pb-6 grid md:grid-cols-5 gap-10">
+    <div class="md:col-span-3">
+      <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Campus event passes and door check-in.</h1>
+      <p class="mt-4 text-stone-600 max-w-md">Register for an event, keep the QR pass on your phone, and get marked present when an organizer scans it.</p>
+      <p class="mt-8 text-sm text-stone-500">Demo accounts:
+        <button onclick="quick('demo')" class="underline underline-offset-4 hover:text-stone-900">attendee</button>,
+        <button onclick="quick('organizer')" class="underline underline-offset-4 hover:text-stone-900">organizer</button>,
+        <button onclick="quick('admin')" class="underline underline-offset-4 hover:text-stone-900">admin</button>
+      </p>
+    </div>
+    <div class="md:col-span-2 bg-white border border-stone-200 rounded-md p-5">
+      <h2 class="font-bold mb-4">Log in or sign up</h2>
+      <div class="space-y-3">
+        <label class="block text-xs text-stone-500">Username<input id="username" class="mt-1 w-full border border-stone-300 rounded px-3 py-2 text-base text-stone-900"></label>
+        <label class="block text-xs text-stone-500">Password<input id="password" type="password" class="mt-1 w-full border border-stone-300 rounded px-3 py-2 text-base text-stone-900"></label>
+        <div class="flex gap-2 pt-1">
+          <button onclick="login()" class="flex-1 bg-stone-900 text-white font-medium rounded py-2 hover:bg-stone-700">Log in</button>
+          <button onclick="signup()" class="flex-1 border border-stone-300 font-medium rounded py-2 hover:bg-stone-100">Sign up</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <section id="login-card" class="bg-white rounded-2xl shadow p-5">
-    <h2 class="font-semibold text-lg mb-3">Sign up / Log in</h2>
-    <div class="flex flex-wrap gap-2">
-      <input id="username" placeholder="username" class="border rounded-lg px-3 py-2 flex-1 min-w-[140px]">
-      <input id="password" type="password" placeholder="password" class="border rounded-lg px-3 py-2 flex-1 min-w-[140px]">
-      <button onclick="login()" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700">Log in</button>
-      <button onclick="signup()" class="bg-slate-200 rounded-lg px-4 py-2 hover:bg-slate-300">Sign up</button>
+<main class="max-w-4xl mx-auto px-4 py-6">
+  <section id="v-events"><div id="events" class="bg-white border border-stone-200 rounded-md divide-y divide-stone-200"></div></section>
+  <section id="v-passes" class="hidden"><div id="passes" class="grid sm:grid-cols-2 gap-6"></div></section>
+
+  <section id="v-scan" class="hidden grid md:grid-cols-2 gap-6">
+    <div class="bg-white border border-stone-200 rounded-md p-5">
+      <h2 class="font-bold mb-3">Scan a pass</h2>
+      <div id="reader" class="w-full rounded overflow-hidden bg-stone-900 min-h-[120px] mb-3"></div>
+      <button onclick="startScan()" class="w-full bg-stone-900 text-white font-medium rounded py-2 hover:bg-stone-700 mb-4">Start camera</button>
+      <div class="flex gap-2">
+        <input id="scan-token" placeholder="or paste pass token" class="mono flex-1 min-w-0 border border-stone-300 rounded px-3 py-2 text-xs">
+        <button onclick="scan($('scan-token').value)" class="bg-orange-700 text-white font-medium rounded px-4 hover:bg-orange-800">Check in</button>
+      </div>
+    </div>
+    <div class="bg-white border border-stone-200 rounded-md p-5">
+      <div class="flex items-baseline justify-between mb-3">
+        <h2 class="font-bold">Checked in</h2>
+        <span id="count" class="mono text-2xl">0</span>
+      </div>
+      <ul id="attendance" class="divide-y divide-stone-200 text-sm max-h-96 overflow-y-auto"></ul>
     </div>
   </section>
 
-  <section class="bg-white rounded-2xl shadow p-5">
-    <h2 class="font-semibold text-lg mb-3">Events</h2>
-    <div id="events" class="grid sm:grid-cols-2 gap-4"></div>
-  </section>
-
-  <section id="passes-card" class="hidden bg-white rounded-2xl shadow p-5">
-    <h2 class="font-semibold text-lg mb-3">My passes</h2>
-    <div id="passes" class="grid sm:grid-cols-2 gap-4"></div>
-  </section>
-
-  <section id="admin-card" class="hidden bg-white rounded-2xl shadow p-5">
-    <h2 class="font-semibold text-lg mb-3">Admin</h2>
-    <h3 class="font-medium mb-2">Create event</h3>
-    <div class="grid sm:grid-cols-2 gap-2 mb-4">
-      <input id="ev-name" placeholder="name" class="border rounded-lg px-3 py-2">
-      <input id="ev-location" placeholder="location" class="border rounded-lg px-3 py-2">
-      <input id="ev-date" type="datetime-local" class="border rounded-lg px-3 py-2">
-      <input id="ev-desc" placeholder="description" class="border rounded-lg px-3 py-2">
-      <button onclick="addEvent()" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 sm:col-span-2">Create event</button>
+  <section id="v-admin" class="hidden grid md:grid-cols-2 gap-6">
+    <div class="bg-white border border-stone-200 rounded-md p-5">
+      <h2 class="font-bold mb-3">Create event</h2>
+      <div class="space-y-3">
+        <input id="ev-name" placeholder="Event name" class="w-full border border-stone-300 rounded px-3 py-2">
+        <input id="ev-location" placeholder="Location" class="w-full border border-stone-300 rounded px-3 py-2">
+        <input id="ev-date" type="datetime-local" class="w-full border border-stone-300 rounded px-3 py-2">
+        <textarea id="ev-desc" rows="3" placeholder="Description" class="w-full border border-stone-300 rounded px-3 py-2"></textarea>
+        <button onclick="addEvent()" class="w-full bg-stone-900 text-white font-medium rounded py-2 hover:bg-stone-700">Create event</button>
+      </div>
     </div>
-    <h3 class="font-medium mb-2">Users</h3>
-    <div id="users" class="space-y-2"></div>
-  </section>
-
-  <section id="scan-card" class="hidden bg-white rounded-2xl shadow p-5">
-    <h2 class="font-semibold text-lg mb-3">Scan pass</h2>
-    <div id="reader" class="max-w-sm mb-3"></div>
-    <button onclick="startScan()" class="bg-emerald-600 text-white rounded-lg px-4 py-2 hover:bg-emerald-700 mb-4">Start camera</button>
-    <div class="flex flex-wrap gap-2 mb-4">
-      <input id="scan-token" placeholder="or paste pass token" class="border rounded-lg px-3 py-2 flex-1 min-w-[200px]">
-      <button onclick="scan(document.getElementById('scan-token').value)" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700">Verify &amp; mark</button>
+    <div class="bg-white border border-stone-200 rounded-md p-5">
+      <h2 class="font-bold mb-3">Users</h2>
+      <div id="users" class="divide-y divide-stone-200"></div>
     </div>
-    <h3 class="font-medium mb-2">Attendance</h3>
-    <ul id="attendance" class="text-sm space-y-1"></ul>
   </section>
 </main>
 
+<div id="result" class="hidden fixed inset-0 z-50 bg-stone-900/60 flex items-center justify-center p-6" onclick="closeResult()">
+  <div id="result-box" class="pop text-white text-center rounded-md p-10 w-full max-w-sm">
+    <div id="result-icon" class="text-6xl font-bold mb-2"></div>
+    <div id="result-title" class="text-2xl font-bold"></div>
+    <div id="result-sub" class="mt-2 opacity-90"></div>
+    <div class="mt-6 text-xs opacity-70">Tap to scan the next pass</div>
+  </div>
+</div>
+
+<div id="zoom" class="hidden fixed inset-0 z-50 bg-stone-900/80 flex items-center justify-center p-6" onclick="this.classList.add('hidden')">
+  <div class="bg-white rounded-md p-6 text-center pop"><img id="zoom-img" class="w-72 h-72 sm:w-96 sm:h-96"><div class="text-xs text-stone-400 mt-2">Tap anywhere to close</div></div>
+</div>
+
+<div id="toasts" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] space-y-2 w-[90%] max-w-sm"></div>
+
 <script>
 const USER = 'http://localhost:9083', EVENT = 'http://localhost:9081', PASS = 'http://localhost:9082';
+const $ = id => document.getElementById(id);
 let token = localStorage.getItem('token');
-let me = null;
+let me = null, tab = 'events', registered = new Set(), passList = [];
 
-function show(text, ok = true) {
-  const m = document.getElementById('msg');
-  m.textContent = text;
-  m.className = 'rounded-lg px-4 py-2 text-sm ' + (ok ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800');
+function toast(text, ok = true) {
+  const t = document.createElement('div');
+  t.className = 'pop rounded px-4 py-3 text-sm font-medium text-white ' + (ok ? 'bg-stone-900' : 'bg-red-700');
+  t.textContent = text;
+  $('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
 
-async function api(url, method = 'GET', body) {
+async function api(url, method = 'GET', body, quiet) {
   const res = await fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: token } : {}) },
@@ -86,116 +135,180 @@ async function api(url, method = 'GET', body) {
   if (!res.ok) {
     let t = '';
     try { t = (await res.json()).message || ''; } catch (e) {}
-    show(method + ' ' + res.status + ' ' + t, false);
-    throw new Error(res.status);
+    if (!quiet) toast(t || 'Something went wrong (' + res.status + ')', false);
+    const err = new Error(t); err.status = res.status; throw err;
   }
   return res.json();
 }
 
-const $ = id => document.getElementById(id);
+const fmt = s => {
+  const d = new Date(s);
+  return isNaN(d) ? (s || 'TBA') : d.toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
+const empty = text => `<div class="col-span-full text-center text-stone-500 py-16 text-sm">${text}</div>`;
 
 async function signup() {
   await api(USER + '/users/signup', 'POST', { username: $('username').value, password: $('password').value });
-  show('Signed up, now log in');
+  toast('Account created, logging you in…');
+  login();
 }
-
-async function login() {
-  const r = await api(USER + '/users/login', 'POST', { username: $('username').value, password: $('password').value });
+async function login(u, p) {
+  const r = await api(USER + '/users/login', 'POST', { username: u || $('username').value, password: p || $('password').value });
   token = r.token;
   localStorage.setItem('token', token);
-  show('Welcome ' + r.user.username);
+  tab = 'events';
+  toast('Logged in as ' + r.user.username);
   refresh();
 }
+const quick = n => login(n, n);
+function logout() { token = null; localStorage.removeItem('token'); tab = 'events'; refresh(); }
 
-function logout() {
-  token = null;
-  localStorage.removeItem('token');
-  refresh();
+function setTab(t) {
+  tab = t;
+  if (t !== 'scan') stopScan();
+  renderTabs();
+}
+
+function renderTabs() {
+  const items = [['events', 'Events']];
+  if (me) items.push(['passes', 'My passes']);
+  if (me && (me.admin || me.organizer)) items.push(['scan', 'Scan']);
+  if (me && me.admin) items.push(['admin', 'Admin']);
+  const html = items.map(([k, l]) => `<button onclick="setTab('${k}')" class="whitespace-nowrap border-b-2 ${tab === k ? 'border-orange-700 font-bold' : 'border-transparent text-stone-500 hover:text-stone-900'}">${l}</button>`).join('');
+  $('tabs').innerHTML = html; $('tabs-m').innerHTML = html;
+  $('tabs').classList.toggle('hidden', !me); $('tabs-m').classList.toggle('hidden', !me);
+  $('tabs-m').classList.toggle('flex', !!me);
+  $('tabs').classList.toggle('sm:flex', !!me);
+  ['events', 'passes', 'scan', 'admin'].forEach(k => $('v-' + k).classList.toggle('hidden', k !== tab));
+  $('hero').classList.toggle('hidden', !!me);
+}
+
+function skeleton() {
+  $('events').innerHTML = [0, 1, 2, 3].map(() => '<div class="skel h-24"></div>').join('');
 }
 
 async function loadEvents() {
   const evs = await api(EVENT + '/events');
-  $('events').innerHTML = evs.map(e => `
-    <div class="border rounded-xl p-4">
-      <div class="font-semibold">${e.name}</div>
-      <div class="text-sm text-slate-500">📍 ${e.location || '-'} · 🕒 ${e.dateTime || '-'}</div>
-      <p class="text-sm my-2">${e.description || ''}</p>
-      ${me ? `<button onclick="register(${e.id})" class="bg-indigo-600 text-white rounded-lg px-3 py-1 text-sm hover:bg-indigo-700">Register</button>` : ''}
-    </div>`).join('') || '<p class="text-slate-500 text-sm">No events yet.</p>';
+  $('events').innerHTML = evs.map(e => {
+    const d = new Date(e.dateTime), ok = !isNaN(d);
+    return `
+    <div class="flex gap-4 p-4 sm:p-5">
+      <div class="w-14 shrink-0 text-center leading-none pt-1">
+        <div class="mono text-2xl">${ok ? d.getDate() : '--'}</div>
+        <div class="text-xs uppercase tracking-wider text-stone-500 mt-1">${ok ? d.toLocaleString([], { month: 'short' }) : ''}</div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold">${e.name}</div>
+        <div class="text-sm text-stone-500">${ok ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' : ''}${e.location || 'Location TBA'}</div>
+        <p class="text-sm text-stone-600 mt-2">${e.description || ''}</p>
+      </div>
+      <div class="shrink-0 self-center">
+        ${!me ? '<span class="text-xs text-stone-400">Log in to register</span>'
+          : registered.has(e.id)
+            ? `<button onclick="setTab('passes')" class="text-sm font-medium border border-stone-300 rounded px-3 py-2 hover:bg-stone-100">View pass</button>`
+            : `<button onclick="register(${e.id})" class="text-sm font-medium bg-orange-700 text-white rounded px-4 py-2 hover:bg-orange-800">Register</button>`}
+      </div>
+    </div>`; }).join('') || empty('No events yet.');
 }
 
 async function register(id) {
   await api(EVENT + '/events/' + id + '/register', 'POST');
-  show('Registered! Pass created below.');
-  loadPasses();
+  toast('Registered. Your pass is ready.');
+  await loadPasses(); loadEvents(); setTab('passes');
 }
 
 async function loadPasses() {
-  const ps = await api(EVENT + '/registrations/mine');
-  $('passes').innerHTML = ps.map(p => `
-    <div class="border rounded-xl p-4 text-center">
-      <div class="font-semibold mb-2">${p.eventName}</div>
-      <img src="${PASS}/passes/${p.passToken}/qr" class="mx-auto w-44 h-44" alt="QR">
-      <div class="text-xs text-slate-400 mt-2 break-all">${p.passToken}</div>
-    </div>`).join('') || '<p class="text-slate-500 text-sm">No passes yet.</p>';
+  passList = await api(EVENT + '/registrations/mine');
+  registered = new Set(passList.map(p => p.eventId));
+  $('passes').innerHTML = passList.map(p => `
+    <div class="ticket rounded-md border border-stone-200 overflow-hidden">
+      <div class="bg-stone-900 text-white p-5">
+        <div class="text-xs uppercase tracking-widest text-orange-400">Event pass</div>
+        <div class="text-xl font-bold mt-1">${p.eventName}</div>
+        <div class="text-sm opacity-90 mt-2">${fmt(p.dateTime)}</div>
+        <div class="text-sm opacity-90">${p.location || 'Location TBA'}</div>
+      </div>
+      <div class="border-t-2 border-dashed border-stone-300 mx-5"></div>
+      <div class="p-5 text-center">
+        <img src="${PASS}/passes/${p.passToken}/qr" onclick="zoom(this.src)" class="mx-auto w-44 h-44 cursor-zoom-in" alt="QR">
+        <div class="mono text-[10px] text-stone-400 mt-2 break-all">${p.passToken}</div>
+        <a href="${PASS}/passes/${p.passToken}/qr" download="pass-${p.registrationId}.png" class="inline-block mt-3 text-sm underline underline-offset-4 hover:text-stone-600">Download QR</a>
+      </div>
+    </div>`).join('') || empty('No passes yet. Register for an event first.');
 }
+function zoom(src) { $('zoom-img').src = src; $('zoom').classList.remove('hidden'); }
 
 async function addEvent() {
   await api(EVENT + '/events', 'POST', {
     name: $('ev-name').value, location: $('ev-location').value,
     dateTime: $('ev-date').value, description: $('ev-desc').value
   });
-  show('Event created');
+  toast('Event created');
+  ['ev-name', 'ev-location', 'ev-date', 'ev-desc'].forEach(i => $(i).value = '');
   loadEvents();
 }
 
 async function loadUsers() {
   const us = await api(USER + '/users');
   $('users').innerHTML = us.map(u => `
-    <div class="flex items-center justify-between border rounded-lg px-3 py-2 text-sm">
-      <span>#${u.id} ${u.username} ${u.admin ? '(admin)' : u.organizer ? '(organizer)' : ''}</span>
-      ${u.admin || u.organizer ? '' : `<button onclick="makeOrganizer(${u.id})" class="bg-slate-200 rounded px-3 py-1 hover:bg-slate-300">Make organizer</button>`}
+    <div class="flex items-center justify-between py-2 text-sm">
+      <span><b>${u.username}</b> ${u.admin ? '<span class="text-stone-500">· admin</span>' : u.organizer ? '<span class="text-stone-500">· organizer</span>' : ''}</span>
+      ${u.admin || u.organizer ? '' : `<button onclick="makeOrganizer(${u.id})" class="border border-stone-300 rounded px-3 py-1 hover:bg-stone-100">Make organizer</button>`}
     </div>`).join('');
 }
+async function makeOrganizer(id) { await api(USER + '/users/' + id + '/organizer', 'PUT'); toast('Promoted to organizer'); loadUsers(); }
 
-async function makeOrganizer(id) {
-  await api(USER + '/users/' + id + '/organizer', 'PUT');
-  loadUsers();
+function showResult(ok, title, sub) {
+  $('result-box').className = 'pop text-white text-center rounded-md p-10 w-full max-w-sm ' + (ok ? 'bg-green-700' : 'bg-red-700');
+  $('result-icon').textContent = ok ? '✓' : '✕';
+  $('result-title').textContent = title;
+  $('result-sub').textContent = sub;
+  $('result').classList.remove('hidden');
+  if (navigator.vibrate) navigator.vibrate(ok ? 120 : [80, 60, 80]);
 }
+function closeResult() { $('result').classList.add('hidden'); }
 
 async function scan(t) {
-  const a = await api(USER + '/attendance/scan', 'POST', { token: t.trim() });
-  show('✅ Attendance marked for registration #' + a.registrationId);
-  loadAttendance();
+  try {
+    const a = await api(USER + '/attendance/scan', 'POST', { token: t.trim() }, true);
+    showResult(true, 'Checked in!', 'Registration #' + a.registrationId);
+    $('scan-token').value = '';
+    loadAttendance();
+  } catch (e) {
+    showResult(false, e.status === 409 ? 'Already checked in' : 'Invalid pass', e.message || '');
+  }
 }
 
 async function loadAttendance() {
   const as = await api(USER + '/attendance');
-  $('attendance').innerHTML = as.map(a =>
-    `<li class="border rounded-lg px-3 py-1">Registration #${a.registrationId} · ${a.scannedAt}</li>`).join('');
+  $('count').textContent = as.length;
+  $('attendance').innerHTML = as.slice().reverse().map(a =>
+    `<li class="flex justify-between py-2"><span>Registration #${a.registrationId}</span><span class="mono text-xs text-stone-500">${new Date(a.scannedAt).toLocaleTimeString()}</span></li>`).join('')
+    || '<li class="text-center text-stone-500 py-8">Nobody checked in yet</li>';
 }
 
 let scanner = null;
 function startScan() {
+  stopScan();
   scanner = new Html5Qrcode('reader');
   scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, async text => {
-    await scanner.stop();
-    scan(text).catch(() => {});
-  }).catch(e => show('Camera failed: ' + e, false));
+    await stopScan();
+    scan(text);
+  }).catch(e => toast('Camera failed: ' + e, false));
+}
+async function stopScan() {
+  const s = scanner; scanner = null;
+  if (s) { try { await s.stop(); } catch (e) {} }
 }
 
 async function refresh() {
   me = null;
-  if (token) {
-    try { me = await api(USER + '/users/me'); } catch (e) { token = null; }
-  }
-  $('login-card').classList.toggle('hidden', !!me);
-  $('userbox').innerHTML = me ? `${me.username} <button onclick="logout()" class="underline ml-2">log out</button>` : '';
-  $('passes-card').classList.toggle('hidden', !me);
-  $('admin-card').classList.toggle('hidden', !(me && me.admin));
-  $('scan-card').classList.toggle('hidden', !(me && (me.admin || me.organizer)));
+  if (token) { try { me = await api(USER + '/users/me', 'GET', null, true); } catch (e) { token = null; localStorage.removeItem('token'); } }
+  $('userbox').innerHTML = me ? `${me.username} <button onclick="logout()" class="ml-3 underline underline-offset-4 hover:text-stone-900">Log out</button>` : '';
+  renderTabs();
+  skeleton();
+  if (me) await loadPasses(); else registered = new Set();
   loadEvents();
-  if (me) loadPasses();
   if (me && me.admin) loadUsers();
   if (me && (me.admin || me.organizer)) loadAttendance();
 }

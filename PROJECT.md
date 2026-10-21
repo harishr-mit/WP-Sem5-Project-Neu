@@ -51,6 +51,24 @@ Plus one H2 file database per backend service (not a separate component). Nothin
 * Sections: event list (visible without login); sign up / login; register for event -> pass with QR image; admin panel (create event, make organizer); scan (organizer/admin only, hidden otherwise).
 * Scan: webcam via `html5-qrcode` (CDN) with a paste-token fallback box.
 
+## Demo data (seeded on first start of an empty DB)
+
+* Users (password = username): `admin` (admin), `organizer` (organizer), `demo`, `alice` (attendees). The login page has one-click demo buttons for admin, organizer and demo.
+* Events: 4 sample events (hackathon, expo, cultural night, career fair), seeded by event-service.
+* To reset to this state: stop all services and delete `*/data/*.db`.
+* Demo script: login as Attendee -> register -> My passes (ticket + QR) -> log out -> Organizer -> Scan -> paste token or show the QR to the camera -> green result; scan again -> red "Already checked in". Admin tab creates events and promotes users.
+* `GET /registrations/mine` now also returns `eventId`, `location`, `dateTime` (fields added, none removed).
+
+## Explicitly NOT doing (owner decision, 1-hour budget)
+
+The project is a demo; the **frontend experience** is the priority. These are deliberately excluded and must not be added or "fixed":
+
+* **No security**: plain-text passwords, open endpoints, no input sanitising.
+* **No hardening**: no validation, no edge-case handling, no rate limits.
+* **No reliability work**: no retries, timeouts, transactions across services, or failure recovery.
+* **No speed optimisation**: no caching, pagination, or tuning.
+* **No tests.** This overrides the "test-first" step in `CLAUDE.md` for this project.
+
 ## Out of scope
 
 Gateway, service discovery, Docker, password hashing, roles, validation, tests beyond the bare minimum, pagination, emailing the pass.

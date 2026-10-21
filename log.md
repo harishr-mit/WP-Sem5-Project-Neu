@@ -41,6 +41,12 @@ Shared context for every agent working in this directory. Read this file **befor
 * [x] T09: client page
 * [x] T10: end-to-end run, README
 
+* [x] T11: README
+* [x] T12: Analyse project, record exclusions (no security/hardening/reliability/speed/tests) in `PROJECT.md`
+* [x] T13: Frontend polish + demo seed data
+
+* [x] T14: Remove vibe-coded visual tells from the UI
+
 *Add new tasks at the bottom with the next free ID. Never reuse or renumber IDs.*
 
 ## Change Log
@@ -56,6 +62,28 @@ Shared context for every agent working in this directory. Read this file **befor
 * **Details:** what changed and how it was verified
 * **Notes / Errors:** anything the next agent needs to know
 -->
+
+### 2026-10-21 — Claude (Sonnet 5.5) — T14: remove "vibe-coded" look
+
+* **Task:** T14
+* **Status:** DONE
+* **Files:** edited `client/.../static/index.html`, `log.md`
+* **Details:** based on web research on AI-UI tells: removed purple/indigo gradients, emoji icons, pill badges, big rounded cards and shadows. Now: one accent (burnt orange), stone neutrals, Public Sans + IBM Plex Mono, flat header with underline tabs, events as a dated list, thin borders, small radii. Same JS logic. Re-verified with Playwright demo flow (no page errors); services stopped, test DBs deleted.
+
+### 2026-10-21 — Claude (Sonnet 5.5) — T13: frontend redesign + demo seed
+
+* **Task:** T13
+* **Status:** DONE
+* **Files:** rewrote `client/.../static/index.html`; edited `user-service/.../UserController.java` (seed organizer/demo/alice), `event-service/.../EventController.java` (seed 4 events; `/registrations/mine` adds eventId/location/dateTime), `PROJECT.md`, `log.md`
+* **Details:** tabs nav, hero login with demo buttons, event cards with registered state, ticket passes with zoom/download, full-screen scan result, toasts, skeletons. No dark mode, no tests (per owner). Verified with Playwright (scratchpad `demo.js`): demo login -> register -> pass -> organizer scan OK -> rescan rejected; no page errors. Camera scanning not tested (no webcam in the run). All 4 services stopped, test DB files deleted so the seed runs fresh.
+* **Notes:** old DB files would block seeding (seed only runs on an empty DB); delete `*/data/*.db` before the review.
+
+### 2026-10-21 — Claude (Sonnet 5.5) — T12: analysis + exclusions
+
+* **Task:** T12
+* **Status:** DONE
+* **Files:** edited `PROJECT.md` (added "Explicitly NOT doing" section), `log.md`
+* **Details:** analysed the project and proposed frontend-focused improvements to the owner; no code changed.
 
 ### 2026-10-20 — Claude (Sonnet 5.5) — T11b: README Windows commands
 
