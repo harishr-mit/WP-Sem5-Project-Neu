@@ -47,6 +47,13 @@ Shared context for every agent working in this directory. Read this file **befor
 
 * [x] T14: Remove vibe-coded visual tells from the UI
 
+* [x] T15: Scan result shows attendee + event name (backend: event-service `GET /registrations/{id}`, user-service stores names on Attendance)
+* [x] T16: Attendance per event (event-service `GET /events/stats`, client bars on Scan tab)
+* [x] T17: Pre-registered passes for `alice` (seed in event-service)
+* [x] T18: Demo mode box on login page
+* [x] T19: `start-demo.ps1`, README update, `demo.md`
+* [x] T20: End-to-end verify, stop services, wipe data
+
 *Add new tasks at the bottom with the next free ID. Never reuse or renumber IDs.*
 
 ## Change Log
@@ -62,6 +69,14 @@ Shared context for every agent working in this directory. Read this file **befor
 * **Details:** what changed and how it was verified
 * **Notes / Errors:** anything the next agent needs to know
 -->
+
+### 2026-10-21 — Claude (Sonnet 5.5) — T15-T20: demo features, start script, docs
+
+* **Task:** T15-T20
+* **Status:** DONE
+* **Files:** created `start-demo.ps1`, `demo.md`; edited `README.md`, `PROJECT.md`, `log.md`, `event-service/.../EventController.java` + `RegistrationRepository.java`, `user-service/.../UserController.java` + `Attendance.java` + `application.properties`, `client/.../static/index.html`
+* **Details:** event-service: `GET /registrations/{id}`, `GET /events/stats`, `createRegistration` helper, seeds 2 passes for alice (id 4). user-service: scan stores username/eventName/eventId (fail-soft if event-service down), new `event.service.url`. Client: Demo mode box, name on scan result, per-event bars on Scan tab. `start-demo.ps1` (-Keep/-Stop/-NoBrowser) verified: all 4 up in ~51 s, `-Stop` leaves nothing listening. Playwright flow verified: alice has 2 passes, organizer scan shows "alice · Hack the Campus 2026", stats 1/1, no page errors. Services stopped, test DBs deleted.
+* **Notes:** camera scan still untested (no webcam), phone width untested. Alice's id 4 is hardcoded in the seed. cmd.exe / execution-policy-restricted PowerShell not tested for the script.
 
 ### 2026-10-21 — Claude (Sonnet 5.5) — T14: remove "vibe-coded" look
 

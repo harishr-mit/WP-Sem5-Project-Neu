@@ -11,5 +11,8 @@ public class Attendance {
     public String passToken;
     public Long registrationId;
     public Long scannedBy;
+    public Long eventId;
+    public String eventName;
+    public String username;
     public LocalDateTime scannedAt;
 }

@@ -19,7 +19,21 @@ Each backend service has its own H2 file database (created under its `data/` fol
 
 Roles: anyone can view events. Logged-in users register and see their passes. The admin (`admin` / `admin`, user id 1) creates events and makes users organizers. Organizers and the admin can scan.
 
-## Quick start
+## Run the demo (one command)
+
+From the project root in PowerShell:
+
+```powershell
+.\start-demo.ps1            # reset data, start all 4 services in order, open the browser (about 1 minute)
+.\start-demo.ps1 -Keep      # same, but keep existing data
+.\start-demo.ps1 -Stop      # stop all 4 services
+```
+
+`-NoBrowser` skips opening the browser. If PowerShell blocks the script, run it once with `powershell -ExecutionPolicy Bypass -File .\start-demo.ps1`. The script sets `JAVA_HOME` for itself only and starts each service in a minimized window.
+
+Demo data (created on first start of an empty database; password = username): `admin`, `organizer`, `demo`, `alice` (alice already has passes for two events), plus four sample events. The login page lists these in a **Demo mode** box. The walkthrough for presenting is in [demo.md](demo.md).
+
+## Quick start (manual, one terminal per service)
 
 Needs the project-local JDK in `.tools/jdk-21` and an internet connection (Maven dependencies, CDN scripts).
 
@@ -65,9 +79,9 @@ API quick reference:
 
 | Service | Endpoint |
 |-|-|
-| event-service | `GET /events` (public), `POST /events` (admin), `POST /events/{id}/register`, `GET /registrations/mine` |
+| event-service | `GET /events` (public), `GET /events/stats` (registered count per event, public), `POST /events` (admin), `POST /events/{id}/register`, `GET /registrations/mine`, `GET /registrations/{id}` |
 | pass-service | `POST /passes`, `GET /passes/{token}/qr`, `GET /passes/{token}/verify` |
-| user-service | `POST /users/signup`, `POST /users/login`, `GET /users/me`, `GET /users` (admin), `PUT /users/{id}/organizer` (admin), `POST /attendance/scan`, `GET /attendance` |
+| user-service | `POST /users/signup`, `POST /users/login`, `GET /users/me`, `GET /users` (admin), `PUT /users/{id}/organizer` (admin), `POST /attendance/scan` (also records attendee and event name), `GET /attendance` |
 
 Authenticated calls send the login token in an `Authorization` header.
 
@@ -79,6 +93,8 @@ Authenticated calls send the login token in an `Authorization` header.
 * **Registering says "login required" or 401**: the saved token is stale (for example after wiping `data/`). Log out and log in again.
 * **Registering fails with a 500 error**: pass-service is down, since event-service calls it to create the pass.
 * **Scan says "invalid pass"**: the token is wrong, or the DB for pass-service was reset after the pass was made.
+* **Scan result shows "Registration #n" instead of a name**: event-service was down at scan time. The check-in still counted.
+* **No demo passes for alice**: pass-service was not running when event-service first started. Use `.\start-demo.ps1` (correct order, clean data).
 * **Scan says "already checked in"**: expected, each pass works once.
 * **Camera does not start**: allow camera access in the browser, use `http://localhost` (not an IP), and close other apps using the camera. The paste-token box always works.
 * **Page is unstyled or the camera button errors**: Tailwind and html5-qrcode load from CDNs, so you need internet access.

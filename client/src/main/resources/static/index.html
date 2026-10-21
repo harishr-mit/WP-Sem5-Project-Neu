@@ -36,11 +36,16 @@
     <div class="md:col-span-3">
       <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Campus event passes and door check-in.</h1>
       <p class="mt-4 text-stone-600 max-w-md">Register for an event, keep the QR pass on your phone, and get marked present when an organizer scans it.</p>
-      <p class="mt-8 text-sm text-stone-500">Demo accounts:
-        <button onclick="quick('demo')" class="underline underline-offset-4 hover:text-stone-900">attendee</button>,
-        <button onclick="quick('organizer')" class="underline underline-offset-4 hover:text-stone-900">organizer</button>,
-        <button onclick="quick('admin')" class="underline underline-offset-4 hover:text-stone-900">admin</button>
-      </p>
+      <div class="mt-8 border border-dashed border-stone-300 rounded-md p-4 max-w-md">
+        <div class="text-xs uppercase tracking-widest text-orange-700 font-bold mb-2">Demo mode</div>
+        <div class="text-sm text-stone-600 divide-y divide-stone-200">
+          <button onclick="quick('demo')" class="w-full flex justify-between py-2 text-left hover:text-stone-900"><span><b>demo</b> · attendee</span><span class="text-stone-400">Register, get a pass</span></button>
+          <button onclick="quick('alice')" class="w-full flex justify-between py-2 text-left hover:text-stone-900"><span><b>alice</b> · attendee</span><span class="text-stone-400">Already has 2 passes</span></button>
+          <button onclick="quick('organizer')" class="w-full flex justify-between py-2 text-left hover:text-stone-900"><span><b>organizer</b></span><span class="text-stone-400">Scan passes</span></button>
+          <button onclick="quick('admin')" class="w-full flex justify-between py-2 text-left hover:text-stone-900"><span><b>admin</b></span><span class="text-stone-400">Events, users, scan</span></button>
+        </div>
+        <div class="text-xs text-stone-400 mt-2">Password is the same as the username. Click a row to log in.</div>
+      </div>
     </div>
     <div class="md:col-span-2 bg-white border border-stone-200 rounded-md p-5">
       <h2 class="font-bold mb-4">Log in or sign up</h2>
@@ -75,6 +80,7 @@
         <h2 class="font-bold">Checked in</h2>
         <span id="count" class="mono text-2xl">0</span>
       </div>
+      <div id="stats" class="space-y-3 mb-4 pb-4 border-b border-stone-200"></div>
       <ul id="attendance" class="divide-y divide-stone-200 text-sm max-h-96 overflow-y-auto"></ul>
     </div>
   </section>
@@ -271,7 +277,7 @@ function closeResult() { $('result').classList.add('hidden'); }
 async function scan(t) {
   try {
     const a = await api(USER + '/attendance/scan', 'POST', { token: t.trim() }, true);
-    showResult(true, 'Checked in!', 'Registration #' + a.registrationId);
+    showResult(true, 'Checked in!', who(a));
     $('scan-token').value = '';
     loadAttendance();
   } catch (e) {
@@ -279,11 +285,18 @@ async function scan(t) {
   }
 }
 
+const who = a => a.username ? a.username + ' · ' + a.eventName : 'Registration #' + a.registrationId;
+
 async function loadAttendance() {
-  const as = await api(USER + '/attendance');
+  const [as, st] = await Promise.all([api(USER + '/attendance'), api(EVENT + '/events/stats')]);
   $('count').textContent = as.length;
+  $('stats').innerHTML = st.map(e => {
+    const n = as.filter(a => a.eventId === e.eventId).length, pct = e.registered ? Math.round(100 * n / e.registered) : 0;
+    return `<div><div class="flex justify-between text-sm"><span>${e.name}</span><span class="mono text-xs text-stone-500">${n} / ${e.registered}</span></div>
+      <div class="h-1.5 bg-stone-200 rounded mt-1"><div class="h-1.5 bg-orange-700 rounded" style="width:${pct}%"></div></div></div>`;
+  }).join('');
   $('attendance').innerHTML = as.slice().reverse().map(a =>
-    `<li class="flex justify-between py-2"><span>Registration #${a.registrationId}</span><span class="mono text-xs text-stone-500">${new Date(a.scannedAt).toLocaleTimeString()}</span></li>`).join('')
+    `<li class="flex justify-between py-2"><span>${who(a)}</span><span class="mono text-xs text-stone-500">${new Date(a.scannedAt).toLocaleTimeString()}</span></li>`).join('')
     || '<li class="text-center text-stone-500 py-8">Nobody checked in yet</li>';
 }
 

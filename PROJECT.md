@@ -53,10 +53,12 @@ Plus one H2 file database per backend service (not a separate component). Nothin
 
 ## Demo data (seeded on first start of an empty DB)
 
-* Users (password = username): `admin` (admin), `organizer` (organizer), `demo`, `alice` (attendees). The login page has one-click demo buttons for admin, organizer and demo.
+* Users (password = username): `admin` (admin, id 1), `organizer` (id 2), `demo` (id 3), `alice` (id 4). The login page has a "Demo mode" box that logs in with one click.
+* event-service also seeds two registrations + passes for alice (user id 4, events 1 and 2). This needs pass-service up first and assumes alice is user id 4 (seed order). Shortcut: ids are hardcoded.
 * Events: 4 sample events (hackathon, expo, cultural night, career fair), seeded by event-service.
-* To reset to this state: stop all services and delete `*/data/*.db`.
+* To reset to this state: `.\start-demo.ps1` (stops services, deletes `*/data/*.db`, starts in order, opens the browser). `-Stop` stops everything. Presenter script: `demo.md`.
 * Demo script: login as Attendee -> register -> My passes (ticket + QR) -> log out -> Organizer -> Scan -> paste token or show the QR to the camera -> green result; scan again -> red "Already checked in". Admin tab creates events and promotes users.
+* New: `GET /registrations/{id}` and `GET /events/stats` (event-service); user-service calls the first on scan and stores `username`, `eventName`, `eventId` on Attendance (fields added only). Scan result shows the name; the Scan tab shows checked-in / registered per event.
 * `GET /registrations/mine` now also returns `eventId`, `location`, `dateTime` (fields added, none removed).
 
 ## Explicitly NOT doing (owner decision, 1-hour budget)

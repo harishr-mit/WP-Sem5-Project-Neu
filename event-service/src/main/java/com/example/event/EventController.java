@@ -45,6 +45,13 @@ public class EventController {
                 e.name = x[0]; e.location = x[1]; e.dateTime = x[2]; e.description = x[3];
                 events.save(e);
             }
+            // alice is user id 4 (admin, organizer, demo, alice); needs pass-service running
+            try {
+                createRegistration(1L, 4L);
+                createRegistration(2L, 4L);
+            } catch (Exception ex) {
+                System.err.println("WARN: demo passes not seeded, is pass-service up? " + ex.getMessage());
+            }
         };
     }
 
@@ -77,14 +84,32 @@ public class EventController {
         events.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "no such event"));
         if (registrations.existsByEventIdAndUserId(id, userId))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "already registered");
+        return createRegistration(id, userId);
+    }
+
+    private Registration createRegistration(Long eventId, Long userId) {
         Registration r = new Registration();
-        r.eventId = id;
+        r.eventId = eventId;
         r.userId = userId;
         registrations.save(r);
         Map<?, ?> pass = rest.post().uri(passUrl + "/passes").body(Map.of("registrationId", r.id))
                 .retrieve().body(Map.class);
         r.passToken = (String) pass.get("token");
         return registrations.save(r);
+    }
+
+    @GetMapping("/registrations/{id}")
+    public Map<String, Object> registration(@PathVariable Long id) {
+        Registration r = registrations.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "no such registration"));
+        return Map.of("registrationId", r.id, "userId", r.userId, "eventId", r.eventId,
+                "eventName", events.findById(r.eventId).map(e -> e.name).orElse("?"));
+    }
+
+    @GetMapping("/events/stats")
+    public List<Map<String, Object>> stats() {
+        return events.findAll().stream().map(e -> Map.<String, Object>of("eventId", e.id, "name", e.name,
+                "registered", registrations.countByEventId(e.id))).toList();
     }
 
     @GetMapping("/registrations/mine")

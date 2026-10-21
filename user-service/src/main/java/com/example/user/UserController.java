@@ -24,6 +24,8 @@ public class UserController {
 
     @Value("${pass.service.url}")
     private String passUrl;
+    @Value("${event.service.url}")
+    private String eventUrl;
 
     public UserController(UserRepository users, AttendanceRepository attendances) {
         this.users = users;
@@ -126,6 +128,14 @@ public class UserController {
         a.passToken = passToken;
         a.registrationId = ((Number) pass.get("registrationId")).longValue();
         a.scannedBy = scanner.id;
+        try {
+            Map<?, ?> reg = rest.get().uri(eventUrl + "/registrations/" + a.registrationId).retrieve().body(Map.class);
+            a.eventId = ((Number) reg.get("eventId")).longValue();
+            a.eventName = (String) reg.get("eventName");
+            a.username = users.findById(((Number) reg.get("userId")).longValue()).map(u -> u.username).orElse(null);
+        } catch (Exception e) {
+            // names are a nicety; check-in still counts if event-service is down
+        }
         a.scannedAt = LocalDateTime.now();
         return attendances.save(a);
     }
